@@ -4,7 +4,7 @@
 
 Single-page UI to browse KYC records by queue and view details. Click **File_Name** to preview in a modal.
 
-## Quick Start TESTING
+## Quick Start
 
 ```bash
 # 1) Install deps
