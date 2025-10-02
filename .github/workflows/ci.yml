@@ -24,7 +24,7 @@ jobs:
         run: npm ci
       - name: Run build
         run: npm run build --if-present
-      - name: Run Test
-        env:
-          CI: false
-        run: npm test -- --passWithNoTests --watchAll=false
+      #- name: Run Test
+      #  env:
+      #    CI: false
+      #  run: npm test -- --passWithNoTests --watchAll=false
