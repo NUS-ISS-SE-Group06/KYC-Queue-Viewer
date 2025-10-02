@@ -8,10 +8,10 @@ Single-page UI to browse KYC records by queue and view details. Click **File_Nam
 
 ```bash
 # 1) Install deps
-npm i
+   npm i
 
 # 2) Run dev server
-npm run dev
+   npm run dev
 ```
 
 Then open the URL printed in the terminal (usually http://localhost:5173)
