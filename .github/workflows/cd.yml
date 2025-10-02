@@ -1,15 +1,16 @@
-name: CD - PRODUCTION
+name: CD-Prod
 env:
   VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
   VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
 
 on:
-  push:
-    branches:
-      - main
+  pull_request:
+    branches: [main]
+    types: [closed] # fires when PR is closed
 
 jobs:
   deploy-prod:
+    if: ${{ github.event.pull_request.merged == true }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
