@@ -1,0 +1,28 @@
+name: CI - React Test and Build
+
+on:
+  push:
+    - '**'
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  react-test-and-build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - name: Install depedencies
+        run: npm ci
+      - name: Run build
+        run: npm run build --if-present
+      - name: Run Test
+        env:
+          CI: false
+        run: npm test -- --passWithNoTests --watchAll=false
