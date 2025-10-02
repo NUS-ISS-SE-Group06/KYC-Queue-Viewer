@@ -4,15 +4,17 @@ env:
   VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
 
 on:
-  pull_request:
+  workflow_run:
+    workflows: ["CI"]
+    types: ["completed"]
     branches: [main]
-    types: [closed] # fires when PR is closed
 
 jobs:
   deploy-prod:
-    if: ${{ github.event.pull_request.merged == true }}
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     steps:
+      - run: echo "Deploying after CI succeeded on main (post-merge)"
       - uses: actions/checkout@v3
       - name: Install Vercel CLI
         run: npm install -global vercel
