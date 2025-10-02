@@ -1,4 +1,4 @@
-**Deployed Frontend URL:** [kyc-dashboard-eight.vercel.app](https://https://kyc-dashboard-eight.vercel.app)
+**Deployed Frontend URL:** [kyc-dashboard-eight.vercel.app](https://kyc-dashboard-eight.vercel.app)
 
 # KYC Queue Viewer (React + Vite + Tailwind + shadcn/ui)
 
