@@ -1,5 +1,5 @@
 
-import React, { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,8 +13,8 @@ import { RBListItem } from "@/components/bits/RBListItem";
 import { RBStatPill } from "@/components/bits/RBStatPill";
 import { Search } from "lucide-react";
 
-
 type FinalDecision = "PROCESSED" | "INPROCESS" | "FAILED";
+
 interface KycRecord {
   id: number;
   File_Name: string;
@@ -27,13 +27,17 @@ interface KycRecord {
   audit_log: string[];
 }
 
+interface KycStatusResponse {
+  total_records: number;
+  filtered_count: number;
+  returned_count: number;
+  offset: number;
+  limit: number | null;
+  data: KycRecord[];
+}
 
 const isProd = import.meta.env.PROD;
-const API_BASE = import.meta.env.VITE_API_BASE || "";
-// In development we use the local JSON; in production, fetch from API `${API_BASE}/v1/kycrecord`
-//const DATA_URL = isProd ? `${API_BASE.replace(/\/$/, "")}/v1/kycrecord` : "/data/KYC_Status_with_audit_revised.json";
-const DATA_URL = "/data/KYC_Status_with_audit_revised.json";
-
+const API_BASE = (import.meta as any).env?.VITE_API_BASE?.replace(/\/$/, "") || "http://localhost:8000";
 
 function toDisplayId(rec: KycRecord): string {
   const year = new Date(rec.created_at).getFullYear();
@@ -51,6 +55,18 @@ function formatIso(iso: string) {
   }
 }
 
+function norm(s: string) {
+  return s.replace(/[^a-z0-9]/gi, "").toLowerCase();
+}
+
+function searchableIds(rec: KycRecord) {
+  const display = toDisplayId(rec);                 // e.g., "KYC-2025-0003"
+  const compact = norm(display);                    // "kyc20250003"
+  const idPadded = String(rec.id).padStart(4, "0"); // "0003"
+  const idRaw = String(rec.id);                     // "3"
+  return { display, compact, idPadded, idRaw };
+}
+
 export default function App() {
   const [data, setData] = useState<KycRecord[] | null>(null);
   const [loading, setLoading] = useState(false);
@@ -64,18 +80,20 @@ export default function App() {
     (async () => {
       try {
         setLoading(true);
-        const res = await fetch(DATA_URL);
-        if (!res.ok) throw new Error(`Failed to load ${DATA_URL}: ${res.status}`);
-        const json = (await res.json());
-        const normalized = json.map((r: any) => ({
-          ...r,
-          final_decision: r.final_decision
-        })) as KycRecord[];
-
+        
+        const res = await fetch(`${API_BASE}/kyc_status`, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        });
+        
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const json = (await res.json()) as KycStatusResponse;
+        const record = (json.data ?? []).map( (r: any) => ({...r,})) as KycRecord[];
         if (!mounted) return;
-        setData(normalized);
-        const first = normalized.find((r) => r.final_decision === activeQueue) ?? normalized[0];
-        setSelectedId(first?.id ?? null);
+        setData(record);
+
       } catch (e: any) {
         setError(e.message ?? String(e));
       } finally {
@@ -95,12 +113,27 @@ export default function App() {
 
   const filtered = useMemo(() => {
     const list = (data ?? []).filter((r) => r.final_decision === activeQueue);
-    if (!query.trim()) return list;
-    const q = query.trim().toLowerCase();
-    return list.filter((r) => toDisplayId(r).toLowerCase().includes(q));
+    const qRaw = query.trim();
+    if (!qRaw) return list;
+
+    const q = norm(qRaw);
+
+    return list.filter((r) => { 
+      const { display, compact, idPadded, idRaw } = searchableIds(r);
+      return ( 
+        display.toLowerCase().includes(qRaw.toLowerCase()) ||
+        compact.includes(q) ||
+        idRaw === qRaw ||       // exact "3"
+        idPadded === qRaw    
+      );
+      
+    });
   }, [data, activeQueue, query]);
 
-  const selected = useMemo(() => (data ?? []).find((r) => r.id === selectedId) ?? null, [data, selectedId]);
+  const selected = useMemo(
+    () =>  (data ?? []).find((r) => r.id === selectedId) ?? null, 
+    [data, selectedId]
+  );
 
   const QueueTab = ({ value, label }: { value: FinalDecision; label: string }) => (
     <TabsTrigger value={value} onClick={() => setActiveQueue(value)} className="gap-2">
